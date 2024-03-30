@@ -18,6 +18,11 @@ Tile retrieval (WMS, TMS, etc.).
 """
 import sys
 import time
+import warnings
+from io import BytesIO
+
+import requests
+from urllib3.exceptions import InsecureRequestWarning
 
 from mapproxy.version import version
 from mapproxy.image import ImageSource
@@ -26,9 +31,7 @@ from mapproxy.client.log import log_request
 
 from urllib import request as urllib2
 from urllib.error import URLError, HTTPError
-from urllib.request import HTTPCookieProcessor
 from http import client as httplib
-from http.cookiejar import CookieJar
 
 import socket
 import ssl
@@ -113,32 +116,30 @@ class _URLOpenerCache(object):
     def __init__(self):
         self._opener = {}
 
-    def __call__(self, ssl_ca_certs, url, username, password, insecure=False, manage_cookies=False):
+    def __call__(self, ssl_ca_certs, url, username, password, insecure=False, manage_cookies=False) -> requests.Session:
+        s = requests.Session()
+
         cache_key = (ssl_ca_certs, insecure, manage_cookies)
         if cache_key not in self._opener:
-            handlers = []
-            https_handler = build_https_handler(ssl_ca_certs, insecure)
-            if https_handler:
-                handlers.append(https_handler)
-            passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
-            authhandler = urllib2.HTTPBasicAuthHandler(passman)
-            handlers.append(authhandler)
-            authhandler = urllib2.HTTPDigestAuthHandler(passman)
-            handlers.append(authhandler)
+            if ssl_ca_certs:
+                s.cert = ssl_ca_certs
+            if insecure:
+                s.verify = False
+
+            if username and password:
+                s.auth = requests.auth.HTTPBasicAuth(username, password)
+
             if manage_cookies:
-                cj = CookieJar()
-                handlers.append(HTTPCookieProcessor(cj))
+                # TODO: fix this part
+                # cj = CookieJar()
+                # handlers.append(HTTPCookieProcessor(cj))
+                ...
 
-            opener = urllib2.build_opener(*handlers)
+            s.headers.update({'User-Agent': 'MapProxy-%s' % (version,)})
 
-            opener.addheaders = [('User-agent', 'MapProxy-%s' % (version,))]
-
-            self._opener[cache_key] = (opener, passman)
+            self._opener[cache_key] = opener = s
         else:
-            opener, passman = self._opener[cache_key]
-
-        if url is not None and username is not None and password is not None:
-            passman.add_password(None, url, username, password)
+            opener = self._opener[cache_key]
 
         return opener
 
@@ -160,24 +161,27 @@ class HTTPClient(object):
         self.header_list = headers.items() if headers else []
         self.hide_error_details = hide_error_details
 
-    def open(self, url, data=None, method=None):
+    def open(self, url, data=None, method='GET'):
         code = None
         result = None
         try:
-            req = urllib2.Request(url, data=data)
+            req = requests.Request(url=url, data=data)
         except ValueError as e:
             err = self.handle_url_exception(url, 'URL not correct', e.args[0])
             reraise_exception(err, sys.exc_info())
         for key, value in self.header_list:
-            req.add_header(key, value)
-        if method:
-            req.method = method
+            req.headers[key] = value
+
+        req.method = method
         try:
             start_time = time.time()
-            if self._timeout is not None:
-                result = self.opener.open(req, timeout=self._timeout)
-            else:
-                result = self.opener.open(req)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=InsecureRequestWarning)
+
+                if self._timeout is not None:
+                    result = self.opener.send(self.opener.prepare_request(req), timeout=self._timeout)
+                else:
+                    result = self.opener.send(self.opener.prepare_request(req))
         except HTTPError as e:
             code = e.code
             err = self.handle_url_exception(url, 'HTTP Error', str(code), response_code=code)
@@ -202,16 +206,17 @@ class HTTPClient(object):
             code = getattr(result, 'code', 200)
             if code == 204:
                 raise HTTPClientError('HTTP Error "204 No Content"', response_code=204)
+
             return result
         finally:
-            log_request(url, code, result, duration=time.time()-start_time, method=req.get_method())
+            log_request(url, code, result, duration=time.time()-start_time, method=req.method)
 
     def open_image(self, url, data=None):
         resp = self.open(url, data=data)
         if 'content-type' in resp.headers:
             if not resp.headers['content-type'].lower().startswith('image'):
                 raise HTTPClientError('response is not an image: (%s)' % (resp.read()))
-        return ImageSource(resp)
+        return ImageSource(BytesIO(resp.content))
 
     def handle_url_exception(self, url, message, reason, response_code=None):
         full_msg = '%s "%s": %s' % (message, url, reason)
@@ -291,5 +296,5 @@ def retrieve_image(url, client=None):
     """
     resp = open_url(url)
     if not resp.headers['content-type'].startswith('image'):
-        raise HTTPClientError('response is not an image: (%s)' % (resp.read()))
-    return ImageSource(resp)
+        raise HTTPClientError('response is not an image: (%s)' % (resp.content))
+    return ImageSource(BytesIO(resp.content))
