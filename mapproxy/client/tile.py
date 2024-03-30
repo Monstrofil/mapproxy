@@ -60,11 +60,11 @@ class TileURLTemplate(object):
     def __init__(self, template, format='png'):
         self.template = template
         self.format = format
-        self.with_quadkey = True if '%(quadkey)' in template else False
-        self.with_tc_path = True if '%(tc_path)' in template else False
-        self.with_tms_path = True if '%(tms_path)' in template else False
-        self.with_arcgiscache_path = True if '%(arcgiscache_path)' in template else False
-        self.with_bbox = True if '%(bbox)' in template else False
+        self.with_quadkey = True if '{quadkey}' in template else False
+        self.with_tc_path = True if '{tc_path}' in template else False
+        self.with_tms_path = True if '{tms_path}' in template else False
+        self.with_arcgiscache_path = True if '{arcgiscache_path}' in template else False
+        self.with_bbox = True if '{bbox}' in template else False
 
     def substitute(self, tile_coord, format=None, grid=None):
         x, y, z = tile_coord
@@ -81,7 +81,7 @@ class TileURLTemplate(object):
         if self.with_bbox:
             data['bbox'] = bbox(tile_coord, grid)
 
-        return self.template % data
+        return self.template.format(**data)
 
     def __repr__(self):
         return '%s(%r, format=%r)' % (
