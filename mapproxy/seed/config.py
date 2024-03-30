@@ -262,7 +262,7 @@ class ConfigurationBase(object):
         else:
             # check that all caches have the same grids configured
             last = []
-            for cache_grids in {cache.keys() for cache in caches.values()}:
+            for cache_grids in {tuple(cache.keys()) for cache in caches.values()}:
                 if not last:
                     last = cache_grids
                 else:
