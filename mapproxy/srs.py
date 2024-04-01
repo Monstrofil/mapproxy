@@ -46,7 +46,10 @@ def get_epsg_num(epsg_code):
     """
     if isinstance(epsg_code, str):
         if ':' in epsg_code and epsg_code.upper().startswith('EPSG'):
-            epsg_code = int(epsg_code.split(':')[1])
+            try:
+                epsg_code = int(epsg_code.split(':')[1])
+            except ValueError:
+                return
         elif epsg_code.isdigit():
             epsg_code = int(epsg_code)
         else:
@@ -75,6 +78,8 @@ def _clean_srs_code(code):
     """
     if isinstance(code, str) and ':' in code:
         return code.upper()
+    elif isinstance(code, str) and 'PROJCS' in code:
+        return code
     else:
         return 'EPSG:' + str(code)
 
@@ -352,8 +357,7 @@ class _SRS(object):
         if epsg_num is not None:
             self.proj = CRS.from_epsg(epsg_num)
         else:
-            auth_name, auth_id = get_authority(srs_code)
-            self.proj = CRS.from_authority(auth_name, auth_id)
+            self.proj = CRS.from_string(srs_code)
 
         self._transformers = {}
 
