@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from io import BytesIO
 
 from mapproxy.client.http import HTTPClient
 from mapproxy.client.wms import WMSInfoClient
@@ -27,7 +28,7 @@ class ArcGISClient(object):
     def retrieve(self, query, format):
         url = self._query_url(query, format)
         resp = self.http_client.open(url)
-        return resp
+        return BytesIO(resp.content)
 
     def _query_url(self, query, format):
         req = self.request_template.copy()
