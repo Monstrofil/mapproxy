@@ -182,6 +182,7 @@ class HTTPClient(object):
                     result = self.opener.send(self.opener.prepare_request(req), timeout=self._timeout)
                 else:
                     result = self.opener.send(self.opener.prepare_request(req))
+                result.raise_for_status()
         except HTTPError as e:
             code = e.code
             err = self.handle_url_exception(url, 'HTTP Error', str(code), response_code=code)
@@ -199,11 +200,15 @@ class HTTPClient(object):
         except ValueError as e:
             err = self.handle_url_exception(url, 'URL not correct', e.args[0])
             reraise_exception(err, sys.exc_info())
+        except requests.RequestException as e:
+            err = self.handle_url_exception(url, 'HTTP Error', str(e.response.status_code),
+                                            response_code=e.response.status_code)
+            reraise_exception(err, sys.exc_info())
         except Exception as e:
             err = self.handle_url_exception(url, 'Internal HTTP error', repr(e))
             reraise_exception(err, sys.exc_info())
         else:
-            code = getattr(result, 'code', 200)
+            code = getattr(result, 'status_code', 200)
             if code == 204:
                 raise HTTPClientError('HTTP Error "204 No Content"', response_code=204)
 
