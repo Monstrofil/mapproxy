@@ -215,7 +215,7 @@ class HTTPClient(object):
         resp = self.open(url, data=data)
         if 'content-type' in resp.headers:
             if not resp.headers['content-type'].lower().startswith('image'):
-                raise HTTPClientError('response is not an image: (%s)' % (resp.read()))
+                raise HTTPClientError('response is not an image: (%s)' % resp.content)
         return ImageSource(BytesIO(resp.content))
 
     def handle_url_exception(self, url, message, reason, response_code=None):
