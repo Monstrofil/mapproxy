@@ -201,7 +201,7 @@ class HTTPClient(object):
             err = self.handle_url_exception(url, 'URL not correct', e.args[0])
             reraise_exception(err, sys.exc_info())
         except requests.RequestException as e:
-            if e.response:
+            if e.response is not None:
                 err = self.handle_url_exception(url, 'HTTP Error', str(e.response.status_code),
                                                 response_code=e.response.status_code)
             else:
