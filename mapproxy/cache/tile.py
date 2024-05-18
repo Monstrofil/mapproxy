@@ -469,6 +469,11 @@ class TileCreator(object):
             if layer[0] is not None:
                 layers.append(layer)
 
+        # todo: make this change dynamically based on sources
+        #   it's hard because we need to dive into the tree
+        #   if we cache already cached layers
+        self.tile_mgr.image_opts.transparent = True
+
         return merge_images(layers, size=query.size, bbox=query.bbox, bbox_srs=query.srs,
                             image_opts=self.tile_mgr.image_opts, merger=self.image_merger)
 
