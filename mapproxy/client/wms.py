@@ -17,6 +17,7 @@
 WMS clients for maps and information.
 """
 import sys
+from io import BytesIO
 
 from mapproxy.request.base import split_mime_type
 from mapproxy.layer import InfoQuery
@@ -66,7 +67,7 @@ class WMSClient(object):
         else:
             resp = self.http_client.open(url, data=data)
         self._check_resp(resp, url)
-        return resp
+        return BytesIO(resp.content)
 
     def _check_resp(self, resp, url):
         if not resp.headers.get('Content-type', 'image/').startswith('image/'):

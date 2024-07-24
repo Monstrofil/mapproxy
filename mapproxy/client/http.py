@@ -19,6 +19,7 @@ Tile retrieval (WMS, TMS, etc.).
 import sys
 import time
 import warnings
+import requests
 from io import BytesIO
 
 import requests
@@ -161,7 +162,7 @@ class HTTPClient(object):
         self.header_list = headers.items() if headers else []
         self.hide_error_details = hide_error_details
 
-    def open(self, url, data=None, method='GET'):
+    def open(self, url, data=None, method='GET') -> requests.Response:
         code = None
         result = None
         try:
