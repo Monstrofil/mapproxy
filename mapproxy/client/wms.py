@@ -76,7 +76,8 @@ class WMSClient(object):
                 log_size = 8000  # larger xml exception
             else:
                 log_size = 100  # image?
-            data = resp.read(log_size+1)
+            content = BytesIO(resp.content)
+            data = content.read(log_size+1)
 
             truncated = ''
             if len(data) == log_size+1:

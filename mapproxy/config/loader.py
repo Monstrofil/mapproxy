@@ -817,7 +817,9 @@ class WMSSourceConfiguration(SourceConfiguration):
                          supported_srs=self.supported_srs(),
                          supported_formats=supported_formats or None,
                          fwd_req_params=fwd_req_params,
-                         error_handler=self.on_error_handler())
+                         error_handler=self.on_error_handler(),
+                         supports_meta_tiles=(self.conf.get('image') or {}).get('supports_meta_tiles', True)
+                         )
 
     def fi_source(self, params=None):
         from mapproxy.client.wms import WMSInfoClient

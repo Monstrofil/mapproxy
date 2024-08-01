@@ -31,12 +31,11 @@ log = logging.getLogger('mapproxy.source.wms')
 
 
 class WMSSource(MapLayer):
-    supports_meta_tiles = True
 
     def __init__(self, client, image_opts=None, coverage=None, res_range=None,
                  transparent_color=None, transparent_color_tolerance=None,
                  supported_srs=None, supported_formats=None, fwd_req_params=None,
-                 error_handler=None):
+                 error_handler=None, supports_meta_tiles=True):
         MapLayer.__init__(self, image_opts=image_opts)
         self.client = client
         self.supported_srs = supported_srs or []
@@ -54,6 +53,7 @@ class WMSSource(MapLayer):
         else:
             self.extent = DefaultMapExtent()
         self.error_handler = error_handler
+        self.supports_meta_tiles = supports_meta_tiles
 
     def is_opaque(self, query):
         """

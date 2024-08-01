@@ -165,7 +165,7 @@ class WMSRequest(BaseRequest):
     def adapt_params_to_version(self):
         params = self.params.copy()
         for key, value in self.fixed_params.items():
-            params[key] = value
+            params[key.upper()] = value
         if 'styles' not in params:
             params['styles'] = ''
         return params
