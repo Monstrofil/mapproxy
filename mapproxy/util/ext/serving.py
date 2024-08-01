@@ -382,8 +382,8 @@ def restart_with_reloader():
             # we need to call in this case. Check for this first.
             if os.path.exists(args[1] + '-script.py'):
                 args[1] = args[1] + '-script.py'
-            elif not args[1].endswith('.exe'):
-                args[1] = args[1] + '.exe'
+            # elif not args[1].endswith('.exe'):
+            #     args[1] = args[1] + '.exe'
         new_environ = os.environ.copy()
         new_environ['WERKZEUG_RUN_MAIN'] = 'true'
 

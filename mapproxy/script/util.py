@@ -55,6 +55,9 @@ def serve_develop_command(args):
     parser.add_option("--debug", default=False, action='store_true',
                       dest="debug",
                       help="Enable debug mode")
+    parser.add_option("--reload", default=False, action='store_true',
+                      dest="reload",
+                      help="Enable reload mode")
     options, args = parser.parse_args(args)
 
     if len(args) != 2:
@@ -103,7 +106,7 @@ def serve_develop_command(args):
         except ImportError:
             pass
 
-    run_simple(host, port, app, use_reloader=True, processes=1,
+    run_simple(host, port, app, use_reloader=options.reload, processes=1,
                threaded=True, passthrough_errors=True,
                extra_files=extra_files)
 
