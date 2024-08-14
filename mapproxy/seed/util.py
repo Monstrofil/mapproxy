@@ -60,7 +60,8 @@ class ProgressStore(object):
     def load(self):
         if not os.path.exists(self.filename):
             pass
-        elif os.stat(self.filename).st_mode & stat.S_IWOTH:
+        # ignore file permissions on windows because it is always world writable
+        elif not os.name == 'nt' and os.stat(self.filename).st_mode & stat.S_IWOTH:
             log.error('progress file (%s) is world writable, ignoring file',
                       self.filename)
         else:
